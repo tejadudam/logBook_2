@@ -54,13 +54,6 @@ def dashboard_page():
     ]
     open_count = len(open_logs)
 
-    statuses = [c["status"] or "Unknown" for c in clients]
-    if statuses:
-        status_counts = pd.Series(statuses).value_counts().reset_index()
-        status_counts.columns = ["Status", "Count"]
-    else:
-        status_counts = pd.DataFrame(columns=["Status", "Count"])
-
     st.markdown(
         '<div class="notion-section-title">Key Metrics</div>',
         unsafe_allow_html=True,
@@ -76,7 +69,7 @@ def dashboard_page():
     )
 
     st.markdown(
-        '<div class="notion-section-title">Task Overview</div>',  
+        '<div class="notion-section-title">Task Overview</div>',
         unsafe_allow_html=True,
     )
     if not logs:
@@ -85,22 +78,27 @@ def dashboard_page():
         lookup = {c["id"]: c["name"] for c in clients}
         for l in logs[:5]:
             client_name = lookup.get(l["client_id"], "Client")
-           
+
             col1, col2 = st.columns([3, 1])
             with col1:
                 st.markdown(
                     f"""
-                    <div class="notion-log-row" style="width: 100%;" >
+                    <div class="notion-log-row">
                         <div class="notion-log-info">
-                            <div class="notion-log-title">{l['title']} <div class="notion-log-meta"> {client_name}  |  {l['log_date'] or ''}  |  {l['status'] or ''} <div class="notion-log-action">
+                            <div class="notion-log-title">{l['title']}</div>
+                            <div class="notion-log-meta">
+                                {client_name} | {l['log_date'] or ''} | {l['status'] or ''}
+                            </div>
+                        </div>
+                    </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
-            with col2:    
+            with col2:
+                st.write("")  # small top padding
                 if st.button("Edit", key=f"dash_edit_{l['id']}"):
                     show_edit_log_dialog(l["id"], get_log_by_id)
-                st.markdown("</div></div>", unsafe_allow_html=True)
 
         st.caption("Showing latest 5 logs.")
 
@@ -338,13 +336,19 @@ def main():
         layout="wide",
     )
 
-    # Global Notion-like theming + layout tweaks
+    # Global Notion-like theming + layout tweaks, dark-mode aware
     st.markdown(
         """
         <style>
-        /* App & layout */
+        /* Hide Streamlit header bar */
+        header, [data-testid="stHeader"] {
+            display: none !important;
+        }
+
+        /* App & layout (use theme vars) */
         .stApp {
-            background-color: #f6f6f9;
+            background-color: var(--background-color);
+            color: var(--text-color);
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
         .block-container {
@@ -355,10 +359,11 @@ def main():
 
         /* Sidebar look */
         section[data-testid="stSidebar"] {
-            background-color: #f4f5fb;
+            background-color: var(--secondary-background-color);
         }
         section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
             margin-bottom: 0.4rem;
+            color: var(--text-color);
         }
 
         /* Sidebar radio -> Notion-like nav */
@@ -370,16 +375,16 @@ def main():
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.92rem;
-            color: #374151;
+            color: var(--text-color);
             margin-bottom: 2px;
         }
         section[data-testid="stSidebar"] [role="radiogroup"] > label:hover {
-            background-color: #e5e7f0 !important;
+            background-color: rgba(148, 163, 184, 0.25) !important;
         }
         section[data-testid="stSidebar"] [role="radiogroup"] > label[data-selected="true"] {
-            background-color: #ffffff !important;
+            background-color: var(--background-color) !important;
             font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.24);
         }
 
         /* Page header */
@@ -393,21 +398,22 @@ def main():
             width: 40px;
             height: 40px;
             border-radius: 12px;
-            background: #ffffff;
+            background: var(--secondary-background-color);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            box-shadow: 0 1px 3px rgba(15,23,42,0.1);
+            box-shadow: 0 1px 3px rgba(15,23,42,0.3);
         }
         .notion-page-title {
             font-size: 1.9rem;
             font-weight: 700;
             letter-spacing: -0.02em;
+            color: var(--text-color);
         }
         .notion-page-subtitle {
             font-size: 0.9rem;
-            color: #6b7280;
+            color: rgba(148, 163, 184, 0.9);
             margin-top: 2px;
         }
 
@@ -416,9 +422,10 @@ def main():
             font-size: 1.05rem;
             font-weight: 600;
             margin: 1.0rem 0 0.4rem 0;
+            color: var(--text-color);
         }
         .notion-section-divider {
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.4);
             margin: 1.0rem 0;
         }
 
@@ -428,17 +435,17 @@ def main():
             grid-template-columns: 0.7fr 3fr 2fr 3fr;
             font-size: 0.75rem;
             text-transform: uppercase;
-            color: #9ca3af;
+            color: rgba(148, 163, 184, 0.95);
             padding: 0.25rem 0.25rem;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.4);
             margin-top: 0.4rem;
         }
         .notion-table-row {
             padding: 0.15rem 0.25rem;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
         }
         .notion-table-row:hover {
-            background-color: #f9fafb;
+            background-color: rgba(148, 163, 184, 0.12);
         }
         .nt-col-id, .nt-col-name, .nt-col-status, .nt-col-actions {
             padding: 0.2rem 0.2rem;
@@ -446,7 +453,7 @@ def main():
         .nt-cell-id {
             font-feature-settings: "tnum" 1;
             font-variant-numeric: tabular-nums;
-            color: #6b7280;
+            color: rgba(148, 163, 184, 0.95);
             font-size: 0.85rem;
             padding-top: 0.2rem;
         }
@@ -458,10 +465,11 @@ def main():
         .nt-name-main {
             font-size: 0.95rem;
             font-weight: 500;
+            color: var(--text-color);
         }
         .nt-name-sub {
             font-size: 0.8rem;
-            color: #9ca3af;
+            color: rgba(148, 163, 184, 0.95);
         }
         .nt-pill {
             display: inline-flex;
@@ -469,25 +477,24 @@ def main():
             padding: 1px 8px;
             border-radius: 999px;
             font-size: 0.78rem;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            color: #374151;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-color);
         }
         .notion-empty {
             padding: 0.8rem 0.4rem;
-            color: #6b7280;
+            color: rgba(148, 163, 184, 0.95);
             font-size: 0.9rem;
         }
 
         /* Recent logs on dashboard */
         .notion-log-row {
             border-radius: 10px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(148, 163, 184, 0.4);
             padding: 12px 16px;
             margin-bottom: 12px;
-            background: #ffffff;
+            background: var(--secondary-background-color);
             display: flex;
-            justify-content: space-between;
             align-items: center;
         }
         .notion-log-info {
@@ -498,28 +505,17 @@ def main():
         .notion-log-title {
             font-size: 0.98rem;
             font-weight: 600;
+            color: var(--text-color);
         }
         .notion-log-meta {
             font-size: 0.78rem;
-            color: #9ca3af;
-        }
-        .notion-log-status {
-            font-size: 0.82rem;
-            color: #4b5563;
-            padding: 3px 8px;
-            border-radius: 6px;
-            background: #f3f4f6;
-            display: inline-block;
-            margin-top: 4px;
-        }
-        .notion-log-action {
-            margin-left: 16px;
+            color: rgba(148, 163, 184, 0.95);
         }
 
         /* Generic text block */
         .notion-text-block {
             font-size: 0.95rem;
-            color: #374151;
+            color: var(--text-color);
         }
         .notion-text-block ul {
             padding-left: 1.2rem;
@@ -528,7 +524,7 @@ def main():
             margin-bottom: 0.25rem;
         }
         .notion-text-block code {
-            background: #f3f4f6;
+            background: rgba(148, 163, 184, 0.18);
             padding: 2px 4px;
             border-radius: 4px;
             font-size: 0.85rem;
