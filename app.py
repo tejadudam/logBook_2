@@ -332,7 +332,7 @@ def settings_page():
 def main():
     st.set_page_config(
         page_title=" D'LogBook",
-        page_icon="📁",
+        page_icon="📚",
         layout="wide",
     )
 
